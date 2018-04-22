@@ -129,6 +129,7 @@ class City(Locus):
         self.token_list.append(self)
 
     def neighbouring_locis(self, entry='start'):
+
         """ Return the connected end objects, except for the entry"""
 
         final_list = copy(self.end_list)
@@ -198,23 +199,22 @@ empty_hex = Hexagon([], {}, ascii_repr=ah.EMPTY_TILE)
 
 class Company:
 
-    def __init__(self, name, token_list, train_list):
+    def __init__(self, name, token_list: List[City], train_list: List[Optional[int]], n_token: int):
 
         self.name = name
         self.token_list = token_list
         self.train_list = train_list
+        self.n_token = n_token
 
     def __repr__(self):
 
         return 'Company named {}'.format(self.name)
 
+    def run_trains(self, board):
 
-class Train:
-
-    def __init__(self, city_number, owner_company):
-
-        self.city_number = city_number
-        self.owner_company = owner_company
+        graph = board.generate_graph(company=self)
+        start_vertices = [token.n for token in self.token_list]
+        return graph.gen_max_pathes(start_vertices, self.train_list)
 
 
 class Board:
@@ -268,7 +268,7 @@ class Board:
 
         self.company_dic[company.name] = company
 
-    def generate_graph(self, company=None):
+    def generate_graph(self, company=None) -> WeightedVerticesGraph:
         locis_list = sum((hexa.track_list + hexa.city_list for hexa in self.hex_dic), [])
 
         i = 0
@@ -277,6 +277,14 @@ class Board:
             i += 1
 
         neighbouring_locis_list = [locus.neighbouring_locis() for locus in locis_list]
+
+        if company is not None:  # Check tokens
+
+            for k, locus in enumerate(locis_list):
+
+                if type(locus) == City and None not in locus.token_list and company not in locus.token_list:
+                    neighbouring_locis_list[k] = []
+
         neighbour_list = [[locus.n for locus in neighbour_list] for neighbour_list in neighbouring_locis_list]
         weight_list = [locus.value for locus in locis_list]
         graph = WeightedVerticesGraph(neighbour_list, weight_list)
@@ -290,5 +298,3 @@ def hex_to_char_coord(x, y):
     hx = len(empty_hex.str_2d()[0])
     return x * hx, y * (hy - 1) // 2
 
-
-board = Board({}, (10, 41))
