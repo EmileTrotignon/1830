@@ -16,9 +16,14 @@
 
 
 from copy import copy, deepcopy
-from typing import *
+from typing import List, Union, Dict, Optional
 from graphlib.main import *
 import ascii_hex as ah
+
+
+def rotate(li, n):
+
+    return li[n:] + li[:n]
 
 
 class Str2D:
@@ -142,10 +147,12 @@ class City(Locus):
 
 class Hexagon:
 
-    def __init__(self, track_list, city_dic, upgradeable=True, ascii_repr=ah.UNKNOWN_TILE):
+    def __init__(self, track_list: List[Track], city_dic: Dict[str, City], side_list: List[Tuple[Track, int]],
+                 upgradeable=True, ascii_repr=ah.UNKNOWN_TILE):
 
         self.track_list = track_list
         self.city_dic = city_dic
+        self.side_list = side_list
         self.upgradeable = upgradeable
         self._ascii_repr = Str2D(ascii_repr[1:])
 
@@ -158,7 +165,12 @@ class Hexagon:
 
         return str(self._ascii_repr)
 
+    def rotated(self, n_rot: int) -> 'Hexagon':
+
+        return Hexagon(self.track_list, self.city_dic, rotate(self.side_list, n_rot))
+
     def str_2d(self) -> Str2D:
+
         return self._ascii_repr
 
     def add_track(self, end1, end2):
@@ -262,6 +274,15 @@ class Board:
 
         return self.ascii_repr
 
+    def upgrade_hex(self, x, y, new_hex, check_rules=True):
+
+        old_hex = self.hex_dic[(x, y)]
+        if (not check_rules) or old_hex.upgradeable:
+            self.hex_dic[(x, y)] = new_hex
+            return True
+        return False
+
+
     def add_company(self, company: Company):
 
         """Floats a new company"""
@@ -298,3 +319,4 @@ def hex_to_char_coord(x, y):
     hx = len(empty_hex.str_2d()[0])
     return x * hx, y * (hy - 1) // 2
 
+print(Board({}, (20, 20)))
